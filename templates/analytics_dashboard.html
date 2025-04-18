@@ -1,0 +1,249 @@
+<!-- templates/analytics_dashboard.html -->
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+   <div class="col-md-6">
+       <h4>Test Scenario Analytics Dashboard</h4>
+   </div>
+   <div class="col-md-6 text-md-end">
+       <div class="btn-group" role="group">
+           <button type="button" class="btn btn-outline-primary" id="exportReport">Export Report</button>
+           <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">Upload New Tests</a>
+       </div>
+   </div>
+</div>
+
+<!-- File Selection -->
+<div class="row mb-4">
+   <div class="col-12">
+       <div class="card">
+           <div class="card-header">
+               <h5 class="mb-0">Select Test Files</h5>
+           </div>
+           <div class="card-body">
+               <form id="analyticsFilterForm">
+                   <div class="row g-3">
+                       <div class="col-md-8">
+                           <label class="form-label">Test Files</label>
+                           <select class="form-select" id="fileSelector" multiple size="5">
+                               {% for file in test_files %}
+                               <option value="{{ file.id }}" {% if file.id in selected_files %}selected{% endif %}>
+                                   {{ file.name }} ({{ file.upload_date.strftime('%Y-%m-%d') }})
+                               </option>
+                               {% endfor %}
+                           </select>
+                       </div>
+                       <div class="col-md-4">
+                           <label class="form-label">Date Range</label>
+                           <div class="input-group mb-3">
+                               <input type="date" class="form-control" id="startDate" name="start_date" value="{{ start_date }}">
+                               <span class="input-group-text">to</span>
+                               <input type="date" class="form-control" id="endDate" name="end_date" value="{{ end_date }}">
+                           </div>
+                           <div class="d-grid gap-2">
+                               <button type="submit" class="btn btn-primary mt-4">Apply Filters</button>
+                           </div>
+                       </div>
+                   </div>
+               </form>
+           </div>
+       </div>
+   </div>
+</div>
+
+<!-- Stats Overview Cards -->
+<div class="row">
+   <div class="col-xl-3 col-md-6 mb-4">
+       <div class="card border-left-primary h-100">
+           <div class="card-body">
+               <div class="row no-gutters align-items-center">
+                   <div class="col mr-2">
+                       <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                           Total Test Cases</div>
+                       <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total }}</div>
+                   </div>
+                   <div class="col-auto">
+                       <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <div class="col-xl-3 col-md-6 mb-4">
+       <div class="card border-left-success h-100">
+           <div class="card-body">
+               <div class="row no-gutters align-items-center">
+                   <div class="col mr-2">
+                       <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                           Pass Rate</div>
+                       <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pass_rate|round|int }}%</div>
+                   </div>
+                   <div class="col-auto">
+                       <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <div class="col-xl-3 col-md-6 mb-4">
+       <div class="card border-left-warning h-100">
+           <div class="card-body">
+               <div class="row no-gutters align-items-center">
+                   <div class="col mr-2">
+                       <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                           Automation Coverage</div>
+                       <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.automation_rate|round|int }}%</div>
+                   </div>
+                   <div class="col-auto">
+                       <i class="fas fa-robot fa-2x text-gray-300"></i>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <div class="col-xl-3 col-md-6 mb-4">
+       <div class="card border-left-danger h-100">
+           <div class="card-body">
+               <div class="row no-gutters align-items-center">
+                   <div class="col mr-2">
+                       <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                           Failed Tests</div>
+                       <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.failed }}</div>
+                   </div>
+                   <div class="col-auto">
+                       <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+   <div class="col-xl-6 col-lg-6">
+       <div class="card mb-4">
+           <div class="card-header">
+               <h6 class="m-0 font-weight-bold">Test Results By File</h6>
+           </div>
+           <div class="card-body">
+               <div class="chart-container">
+                   <canvas id="fileResultsChart"></canvas>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <div class="col-xl-6 col-lg-6">
+       <div class="card mb-4">
+           <div class="card-header">
+               <h6 class="m-0 font-weight-bold">Test Results Summary</h6>
+           </div>
+           <div class="card-body">
+               <div class="chart-container">
+                   <canvas id="resultsSummaryChart"></canvas>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
+
+<div class="row">
+   <div class="col-xl-6 col-lg-6">
+       <div class="card mb-4">
+           <div class="card-header">
+               <h6 class="m-0 font-weight-bold">Test Cases By Type</h6>
+           </div>
+           <div class="card-body">
+               <div class="chart-container">
+                   <canvas id="typeDistributionChart"></canvas>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <div class="col-xl-6 col-lg-6">
+       <div class="card mb-4">
+           <div class="card-header">
+               <h6 class="m-0 font-weight-bold">Test Cases By Priority</h6>
+           </div>
+           <div class="card-body">
+               <div class="chart-container">
+                   <canvas id="priorityDistributionChart"></canvas>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
+
+<!-- Test Results Table -->
+<div class="row">
+   <div class="col-12">
+       <div class="card mb-4">
+           <div class="card-header d-flex justify-content-between align-items-center">
+               <h6 class="m-0 font-weight-bold">Test Results</h6>
+               <div>
+                   <input type="text" class="form-control form-control-sm" id="searchResults" placeholder="Search results...">
+               </div>
+           </div>
+           <div class="card-body">
+               <div class="table-responsive">
+                   <table class="table table-hover" id="resultsTable">
+                       <thead>
+                           <tr>
+                               <th>Test Case ID</th>
+                               <th>Test Name</th>
+                               <th>File</th>
+                               <th>Priority</th>
+                               <th>Type</th>
+                               <th>Status</th>
+                               <th>Automated</th>
+                               <th>Date</th>
+                               <th>Actions</th>
+                           </tr>
+                       </thead>
+                       <tbody>
+                           {% for case in test_cases %}
+                           <tr>
+                               <td>{{ case.test_id }}</td>
+                               <td>{{ case.test_name }}</td>
+                               <td>{{ case.test_file.name }}</td>
+                               <td><span class="badge {% if case.priority == 'High' %}bg-danger{% elif case.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">{{ case.priority }}</span></td>
+                               <td>{{ case.test_type }}</td>
+                               <td><span class="badge {% if case.status|lower in ['pass', 'passed'] %}bg-success{% elif case.status|lower in ['fail', 'failed'] %}bg-danger{% else %}bg-secondary{% endif %}">{{ case.status }}</span></td>
+                               <td><i class="fas fa-{% if case.automated %}check text-success{% else %}times text-secondary{% endif %}"></i></td>
+                               <td>{{ case.test_file.upload_date.strftime('%Y-%m-%d') }}</td>
+                               <td><button class="btn btn-sm btn-outline-primary view-case" data-id="{{ case.id }}">View</button></td>
+                           </tr>
+                           {% endfor %}
+                       </tbody>
+                   </table>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+   // Pass data to the analytics.js file
+   const analyticsData = {
+       fileResults: {{ file_results|tojson }},
+       resultsSummary: {
+           passed: {{ stats.passed }},
+           failed: {{ stats.failed }},
+           notRun: {{ stats.total - stats.passed - stats.failed }}
+       },
+       typeDistribution: {{ stats.test_types|tojson }},
+       priorityDistribution: {{ stats.priorities|tojson }}
+   };
+</script>
+<script src="{{ url_for('static', filename='js/analytics_dashboard.js') }}"></script>
+{% endblock %}

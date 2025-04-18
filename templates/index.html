@@ -1,0 +1,98 @@
+<!-- templates/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Test Scenario Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dashboard Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center bg-primary text-white">
+                            <div class="card-body">
+                                <h3>{{ test_files|length }}</h3>
+                                <p class="mb-0">Test Scenario Files</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-success text-white">
+                            <div class="card-body">
+                                <h3>{{ test_files|sum(attribute='test_cases') }}</h3>
+                                <p class="mb-0">Total Test Cases</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-warning text-white">
+                            <div class="card-body">
+                                <h3>{{ (test_files|sum(attribute='pass_rate') / test_files|length)|round|int if test_files|length > 0 else 0 }}%</h3>
+                                <p class="mb-0">Avg Pass Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-info text-white">
+                            <div class="card-body">
+                                <h3>{{ test_files[0].upload_date.strftime('%Y-%m-%d') if test_files|length > 0 else 'N/A' }}</h3>
+                                <p class="mb-0">Latest Upload</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>Recent Test Scenario Files</div>
+                <a href="{{ url_for('upload') }}" class="btn btn-sm btn-primary">Upload New File</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Upload Date</th>
+                                <th>Test Cases</th>
+                                <th>Pass Rate</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in test_files %}
+                            <tr>
+                                <td>{{ file.name }}</td>
+                                <td>{{ file.upload_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ file.test_cases|length }}</td>
+                                <td>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ file.pass_rate }}%;" aria-valuenow="{{ file.pass_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="fw-bold">{{ file.pass_rate|round|int }}%</small>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('analytics', file_id=file.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

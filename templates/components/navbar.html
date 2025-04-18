@@ -1,0 +1,16 @@
+<!-- templates/components/navbar.html -->
+<div class="topbar">
+    <div class="search-bar">
+        <input type="text" class="form-control" placeholder="Search..." style="width: 250px;">
+    </div>
+    <div class="user-profile dropdown">
+        <img src="{{ url_for('static', filename='img/placeholder.jpg') }}" alt="User profile" class="dropdown-toggle" data-bs-toggle="dropdown">
+        <span class="dropdown-toggle" data-bs-toggle="dropdown">John Doe</span>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+        </ul>
+    </div>
+ </div>

@@ -1,0 +1,216 @@
+<!-- templates/test_cases.html -->
+{% extends 'base.html' %}
+
+{% block title %}Test Cases History{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h4>Test Cases History</h4>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" id="exportTestCases">Export Test Cases</button>
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">Upload New Tests</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Filter Test Cases</h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="fas fa-filter"></i> Filters
+                </button>
+            </div>
+            <div class="card-body collapse" id="filterCollapse">
+                <form id="filterForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Test Case ID</label>
+                        <input type="text" class="form-control" name="test_id" placeholder="Search by ID">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Test File</label>
+                        <select class="form-select" name="file_id">
+                            <option value="">All Files</option>
+                            {% for file in test_files %}
+                            <option value="{{ file.id }}">{{ file.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="pass">Passed</option>
+                            <option value="fail">Failed</option>
+                            <option value="not run">Not Run</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Automated</label>
+                        <select class="form-select" name="automated">
+                            <option value="">All</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Test Type</label>
+                        <select class="form-select" name="test_type">
+                            <option value="">All Types</option>
+                            <option value="Functional">Functional</option>
+                            <option value="Performance">Performance</option>
+                            <option value="Security">Security</option>
+                            <option value="Usability">Usability</option>
+                            <option value="Compatibility">Compatibility</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" name="priority">
+                            <option value="">All Priorities</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-secondary" id="resetFilters">Reset</button>
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Test Case Results</h5>
+                <div>
+                    <input type="text" class="form-control form-control-sm" id="searchTestCases" placeholder="Search...">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="testCasesTable">
+                        <thead>
+                            <tr>
+                                <th>Test Case ID</th>
+                                <th>Test Name</th>
+                                <th>Test File</th>
+                                <th>Priority</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Automated</th>
+                                <th>Last Run</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in test_cases %}
+                            <tr data-status="{{ case.status|lower }}" data-automated="{{ 'yes' if case.automated else 'no' }}" data-type="{{ case.test_type }}" data-priority="{{ case.priority }}">
+                                <td>{{ case.test_id }}</td>
+                                <td>{{ case.test_name }}</td>
+                                <td>{{ case.test_file.name }}</td>
+                                <td><span class="badge {% if case.priority == 'High' %}bg-danger{% elif case.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">{{ case.priority }}</span></td>
+                                <td>{{ case.test_type }}</td>
+                                <td><span class="badge {% if case.status|lower in ['pass', 'passed'] %}bg-success{% elif case.status|lower in ['fail', 'failed'] %}bg-danger{% else %}bg-secondary{% endif %}">{{ case.status }}</span></td>
+                                <td><i class="fas fa-{% if case.automated %}check text-success{% else %}times text-secondary{% endif %}"></i></td>
+                                <td>{{ case.test_file.upload_date.strftime('%Y-%m-%d') }}</td>
+                                <td><button class="btn btn-sm btn-outline-primary view-case" data-id="{{ case.id }}">View</button></td>
+                            </tr>
+                            {% endfor %}
+                            {% if test_cases|length == 0 %}
+                            <tr>
+                                <td colspan="9" class="text-center">No test cases found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Case Stats Cards -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Test Cases</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Pass Rate</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pass_rate|round|int }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Automation Coverage</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.automation_rate|round|int }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-robot fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Test Files</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ test_files|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/test_cases.js') }}"></script>
+{% endblock %}

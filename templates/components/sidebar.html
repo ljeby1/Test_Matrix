@@ -1,0 +1,14 @@
+<!-- templates/components/sidebar.html -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h3><i class="fas fa-flask me-2"></i> TestScenarioAI</h3>
+    </div>
+    <div class="sidebar-menu">
+        <a href="{{ url_for('analytics_dashboard') }}" {% if request.path == '/analytics_dashboard' %}class="active"{% endif %}><i class="fas fa-chart-line"></i> Analytics Dashboard</a>
+        <a href="{{ url_for('index') }}" {% if request.path == '/' %}class="active"{% endif %}><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="{{ url_for('upload') }}" {% if request.path == '/upload' %}class="active"{% endif %}><i class="fas fa-upload"></i> Upload Test Scenarios</a>
+        <a href="{{ url_for('analytics', file_id=test_files[0].id) if test_files|length > 0 else '#' }}" {% if '/analytics' in request.path %}class="active"{% endif %}><i class="fas fa-chart-bar"></i> Analytics</a>
+        <a href="{{ url_for('test_cases') }}" {% if request.path == '/test_cases' %}class="active"{% endif %}><i class="fas fa-flask"></i> Test Cases</a>
+        <a href="#"><i class="fas fa-cog"></i> Settings</a>
+    </div>
+ </div>

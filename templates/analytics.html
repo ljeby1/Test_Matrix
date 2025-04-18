@@ -1,0 +1,230 @@
+<!-- templates/analytics.html -->
+{% extends 'base.html' %}
+
+{% block title %}Test Scenario Analytics{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h4>{{ test_file.name }}</h4>
+        <p class="text-muted">Uploaded on {{ test_file.upload_date.strftime('%B %d, %Y') }}</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" id="exportReport">Export Report</button>
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">Back to Upload</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Test Cases</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Pass Rate</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pass_rate|round|int }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Automation Coverage</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.automation_rate|round|int }}%</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-robot fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Failed Tests</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.failed }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Test Case Results</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Filter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item filter-results" href="#" data-filter="all">All Test Cases</a></li>
+                        <li><a class="dropdown-item filter-results" href="#" data-filter="failed">Failed Tests Only</a></li>
+                        <li><a class="dropdown-item filter-results" href="#" data-filter="automated">Automated Tests Only</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="testResultsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold">Test Results Breakdown</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="testBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Test Case Summary</h6>
+                <div>
+                    <input type="text" class="form-control form-control-sm" id="testCaseSearch" placeholder="Search test cases...">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="testCasesTable">
+                        <thead>
+                            <tr>
+                                <th>Test Case ID</th>
+                                <th>Test Case Name</th>
+                                <th>Priority</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Automated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in test_cases %}
+                            <tr data-status="{{ case.status|lower }}" data-automated="{{ 'yes' if case.automated else 'no' }}">
+                                <td>{{ case.test_id }}</td>
+                                <td>{{ case.test_name }}</td>
+                                <td><span class="badge {% if case.priority == 'High' %}bg-danger{% elif case.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">{{ case.priority }}</span></td>
+                                <td>{{ case.test_type }}</td>
+                                <td><span class="badge {% if case.status|lower in ['pass', 'passed'] %}bg-success{% elif case.status|lower in ['fail', 'failed'] %}bg-danger{% else %}bg-secondary{% endif %}">{{ case.status }}</span></td>
+                                <td><i class="fas fa-{% if case.automated %}check text-success{% else %}times text-secondary{% endif %}"></i></td>
+                                <td><button class="btn btn-sm btn-outline-primary view-case" data-id="{{ case.id }}">View</button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold">Test Case Priority Distribution</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold">Test Case Type Distribution</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Case Detail Modal -->
+<div class="modal fade" id="testCaseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTestName">Test Case Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalTestBody">
+                <!-- Will be populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pass data to the charts.js file
+    const testData = {
+        total: {{ stats.total }},
+        passed: {{ stats.passed }},
+        failed: {{ stats.failed }},
+        types: {{ stats.test_types|tojson }},
+        priorities: {{ stats.priorities|tojson }},
+        fileId: {{ test_file.id }}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}
